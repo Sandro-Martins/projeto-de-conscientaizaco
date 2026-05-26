@@ -1,0 +1,70 @@
+services:
+
+  ctfd:
+    image: ctfd/ctfd:latest
+    container_name: ctfd
+    restart: unless-stopped
+
+    ports:
+      - "8000:8000"
+
+    environment:
+      DATABASE_URL: postgresql://ctfd:ctfd@db/ctfd
+      SECRET_KEY: lab
+      UPLOAD_FOLDER: /var/uploads
+      LOG_FOLDER: /var/log/CTFd
+
+    volumes:
+      - ./ctfd/data/uploads:/var/uploads
+      - ./ctfd/data/logs:/var/log/CTFd
+
+    depends_on:
+      - db
+
+    networks:
+      - labnet
+
+    profiles:
+      - ctfd
+      - full
+
+  db:
+    image: postgres:15
+    container_name: ctfd-db
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ctfd
+      POSTGRES_USER: ctfd
+      POSTGRES_PASSWORD: ctfd
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    networks:
+      - labnet
+
+    profiles:
+      - ctfd
+      - full
+
+  juice-shop:
+    image: bkimminich/juice-shop:latest
+    container_name: juice-shop
+    restart: unless-stopped
+
+    ports:
+      - "3000:3000"
+
+    networks:
+      - labnet
+
+    profiles:
+      - juice
+      - full
+
+networks:
+  labnet:
+
+volumes:
+  postgres_data:
