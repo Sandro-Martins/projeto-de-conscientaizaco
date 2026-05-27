@@ -1,7 +1,7 @@
 services:
 
   ctfd:
-    image: ctfd/ctfd:latest
+    build: ctfd/ctfd:3.7.4
     container_name: ctfd
     restart: unless-stopped
 
@@ -10,23 +10,17 @@ services:
 
     environment:
       DATABASE_URL: postgresql://ctfd:ctfd@db/ctfd
-      SECRET_KEY: lab
-      UPLOAD_FOLDER: /var/uploads
-      LOG_FOLDER: /var/log/CTFd
-
-    volumes:
-      - ./ctfd/data/uploads:/var/uploads
-      - ./ctfd/data/logs:/var/log/CTFd
+      SECRET_KEY: supersecretkey
 
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+
+    volumes:
+      - ctfd_data:/opt/CTFd/.data
 
     networks:
       - labnet
-
-    profiles:
-      - ctfd
-      - full
 
   db:
     image: postgres:15
@@ -38,15 +32,17 @@ services:
       POSTGRES_USER: ctfd
       POSTGRES_PASSWORD: ctfd
 
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ctfd"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
     networks:
       - labnet
-
-    profiles:
-      - ctfd
-      - full
 
   juice-shop:
     image: bkimminich/juice-shop:latest
@@ -59,12 +55,9 @@ services:
     networks:
       - labnet
 
-    profiles:
-      - juice
-      - full
-
 networks:
   labnet:
 
 volumes:
   postgres_data:
+  ctfd_data:
